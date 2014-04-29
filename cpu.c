@@ -5,57 +5,82 @@
 #include <stdbool.h>
 #include <time.h>
 
-size_t get_total_memory()
+struct mem_info {
+    long total;
+    long free;
+    long used;
+};
+
+struct mem_info get_mem_usage()
 {
-    long pages = sysconf(_SC_PHYS_PAGES);
+    struct mem_info mem_usage;
+
+    long total_pages = sysconf(_SC_PHYS_PAGES);
+    long free_pages = sysconf(_SC_AVPHYS_PAGES);
     long page_size = sysconf(_SC_PAGE_SIZE);
-    return pages * page_size / 1024;
+
+    mem_usage.total = total_pages * page_size / 1024;
+    mem_usage.free = free_pages * page_size / 1024;
+    mem_usage.used = mem_usage.total - mem_usage.free;
+
+    return mem_usage;
 }
 
-size_t get_free_memory()
+struct cpu_info {
+    long double sys_time;
+    long double idle_time;
+    long double cpu_time;
+};
+
+struct cpu_info get_cpu_usage()
 {
-    long pages = sysconf(_SC_AVPHYS_PAGES);
-    long page_size = sysconf(_SC_PAGE_SIZE);
-    return pages * page_size / 1024;
+    long double sys_time[2], idle_time[2];
+    struct cpu_info cpu_usage;
+
+    for (int i = 0; i < 2; i++) {
+        FILE *fh = fopen("/proc/uptime", "rd");
+        
+        char buffer[128];
+
+        if (fgets(buffer, sizeof buffer, fh) == NULL) {
+            printf("Unable to read cpu info\n");
+            exit(-1);
+        }
+
+        char *sys_time_s = strtok(buffer, " ");
+        char *idle_time_s = strtok(NULL, " ");
+
+        if (sys_time_s == NULL || idle_time_s == NULL) {
+            printf("Unexpected CPU info format\n");
+            exit(-1);
+        }
+
+        sys_time[i] = strtod(sys_time_s, NULL);
+        idle_time[i] = strtod(idle_time_s, NULL);
+
+        fclose(fh);
+
+        usleep(500000);
+    }
+
+    cpu_usage.sys_time = sys_time[1] - sys_time[0];
+    cpu_usage.idle_time = idle_time[1] - idle_time[0];
+    cpu_usage.cpu_time = cpu_usage.sys_time - cpu_usage.idle_time;
+
+    return cpu_usage;
 }
 
 int main(int argc, char **argv)
 {
-    long double sys_time[2], idle_time[2];
+    struct mem_info mem_usage;
+    struct cpu_info cpu_usage;
 
-    while (true) {
-        for (int i = 0; i < 2; i++) {
-            FILE *fh = fopen("/proc/uptime", "rd");
-            
-            char buffer[128];
+    do {
+        mem_usage = get_mem_usage();
+        cpu_usage = get_cpu_usage();
 
-            if (fgets(buffer, sizeof buffer, fh) == NULL) {
-                printf("Unable to read cpu info\n");
-                exit(-1);
-            }
-
-            char *sys_time_s = strtok(buffer, " ");
-            char *idle_time_s = strtok(NULL, " ");
-
-            if (sys_time_s == NULL || idle_time_s == NULL) {
-                printf("Unexpected CPU info format\n");
-                exit(-1);
-            }
-
-            sys_time[i] = strtod(sys_time_s, NULL);
-            idle_time[i] = strtod(idle_time_s, NULL);
-
-            fclose(fh);
-
-            usleep(500000);
-        }
-
-        long double sys_time_elapsed = sys_time[1] - sys_time[0];
-        long double idle_time_elapsed = idle_time[1] - idle_time[0];
-        long double cpu_time = sys_time_elapsed - idle_time_elapsed;
-
-        printf("Cpu load: %.2Lf%%\tMemory used: %dKB\n", cpu_time / sys_time_elapsed * 100, get_total_memory() - get_free_memory());
-    }
+        printf("CPU load: %.2Lf%%, Memory used: %ldKB\n", cpu_usage.cpu_time / cpu_usage.sys_time * 100, mem_usage.used);
+    } while (true);
 
     return 0;
 }
