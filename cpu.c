@@ -5,6 +5,20 @@
 #include <stdbool.h>
 #include <time.h>
 
+size_t get_total_memory()
+{
+    long pages = sysconf(_SC_PHYS_PAGES);
+    long page_size = sysconf(_SC_PAGE_SIZE);
+    return pages * page_size / 1024;
+}
+
+size_t get_free_memory()
+{
+    long pages = sysconf(_SC_AVPHYS_PAGES);
+    long page_size = sysconf(_SC_PAGE_SIZE);
+    return pages * page_size / 1024;
+}
+
 int main(int argc, char **argv)
 {
     long double sys_time[2], idle_time[2];
@@ -40,7 +54,7 @@ int main(int argc, char **argv)
         long double idle_time_elapsed = idle_time[1] - idle_time[0];
         long double cpu_time = sys_time_elapsed - idle_time_elapsed;
 
-        printf("%.2Lf%%\n", cpu_time / sys_time_elapsed * 100);
+        printf("Cpu load: %.2Lf%%\tMemory used: %dKB\n", cpu_time / sys_time_elapsed * 100, get_total_memory() - get_free_memory());
     }
 
     return 0;
