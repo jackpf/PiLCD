@@ -27,9 +27,10 @@ struct mem_info get_mem_usage()
 }
 
 struct cpu_info {
-    long double sys_time;
-    long double idle_time;
-    long double cpu_time;
+    double sys_time;
+    double idle_time;
+    double cpu_time;
+    int temp;
 };
 
 struct cpu_info get_cpu_usage()
@@ -79,7 +80,7 @@ int main(int argc, char **argv)
         mem_usage = get_mem_usage();
         cpu_usage = get_cpu_usage();
 
-        printf("CPU load: %.2Lf%%, Memory used: %ldKB\n", cpu_usage.cpu_time / cpu_usage.sys_time * 100, mem_usage.used);
+        printf("CPU load: %.2f%%, Memory used: %ldKB\n", cpu_usage.cpu_time / cpu_usage.sys_time * 100, mem_usage.used);
     } while (true);
 
     return 0;
