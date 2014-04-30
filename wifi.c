@@ -3,6 +3,7 @@
 #include <ifaddrs.h>
 #include <stdio.h>
 #include <net/if.h>
+#include <string.h>
 
 struct ifaddrs *get_interface(char *name)
 {
@@ -35,3 +36,4 @@ int main (int argc, char **argv)
 
     return 0;
 }
+
