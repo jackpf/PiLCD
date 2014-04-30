@@ -12,7 +12,7 @@ struct ifaddrs *get_interface(char *name)
     getifaddrs(&ifap);
 
     for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
-        if (ifa->ifa_addr->sa_family == AF_INET && strcmp(ifa->ifa_name, name) == 0) {
+        if (ifa->ifa_addr != NULL && ifa->ifa_addr->sa_family == AF_INET && strcmp(ifa->ifa_name, name) == 0) {
             freeifaddrs(ifap);
             return ifa;
         }
@@ -24,7 +24,7 @@ struct ifaddrs *get_interface(char *name)
 
 int main (int argc, char **argv)
 {
-    struct ifaddrs *ifa = get_interface("eth0" /*TODO: arg */);
+    struct ifaddrs *ifa = get_interface("wlan0" /*TODO: arg */);
 
     if (ifa != NULL) {
         struct sockaddr_in *sa = (struct sockaddr_in *) ifa->ifa_addr;
