@@ -48,7 +48,7 @@ double _get_cpu_temp()
         return 0.0;
     }
 
-    return strtod(buffer, NULL);
+    return strtod(buffer, NULL) / 1000.0;
 }
 
 struct cpu_info *get_cpu_usage()
