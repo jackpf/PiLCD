@@ -84,7 +84,9 @@ struct cpu_info *get_cpu_usage()
         sys_time[i] = strtod(sys_time_s, NULL);
         idle_time[i] = strtod(idle_time_s, NULL);
 
-        usleep(500000);
+        if (i == 0) {
+            usleep(1000000);
+        }
     }
 
     cpu_usage->sys_time = sys_time[1] - sys_time[0];
