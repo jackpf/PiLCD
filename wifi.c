@@ -54,7 +54,7 @@ void blah(char *ifname)
     strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 
     if (ioctl(skfd, SIOCGIWRANGE, &wrq) < 0) {
-        printf("Failed to fetch signal range: %s", strerror(errno));
+        printf("Unable to get signal range: %s", strerror(errno));
         return;
     }
 
@@ -74,12 +74,13 @@ void blah(char *ifname)
         if (!(stats.qual.updated & IW_QUAL_LEVEL_INVALID)) {
             int db_level = stats.qual.level;
 
+            // Implement a range  of [-192; 63] dBm
             if (db_level >= 64) {
                 db_level -= 0x100;
             }
 
             printf("level:%d dBm", db_level);
-            int quality = 2 * (db_level + 100);
+            int quality = round((db_level + 192.0) / 255.0 * 100.0);
             quality = quality < 0 ? 0 : quality > 100 ? 100 : quality;
             printf("quality: %d%%\n", quality);
         }
