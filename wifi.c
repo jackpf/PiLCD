@@ -6,6 +6,7 @@
 #include <string.h>
 #include <linux/wireless.h>
 #include <sys/ioctl.h>
+#include <errno.h>
 
 struct ifaddrs *get_interface(char *ifname)
 {
@@ -29,32 +30,60 @@ void blah(char *ifname)
     int skfd;
     struct iwreq wrq;
     struct iw_statistics stats;
+    struct iw_range range;
+    struct iw_quality quality;
 
     if ((skfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        printf("Failed to open socket\n");
+        printf("Failed to open socket: %s\n", strerror(errno));
     }
 
-    /*memset(&wrq, 0, sizeof(struct iwreq));
-    wrq.u.data.pointer = &stats;
-    wrq.u.data.length = 0;
-    wrq.u.data.flags = 1;
-    strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
-
-    ioctl(skfd, SIOCGIWSTATS, &wrq);
-
-    printf("%d\n", wrq.u.essid.length);
-    printf("%.*s\n", wrq.u.essid.length, wrq.u.essid.pointer);*/
-
+    // Check interface is wlan
     memset(&wrq, 0, sizeof(struct iwreq));
     strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
+    
     if (ioctl(skfd, SIOCGIWNAME, &wrq) < 0) {
         printf("Interface does not support wlan\n");
         return;
     }
 
+    // Get signal range
+    memset(&wrq, 0, sizeof(struct iwreq));
+    wrq.u.data.pointer = &range;
+    wrq.u.data.length = sizeof(range);
+    wrq.u.data.flags = 0;
     strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
-    ioctl(skfd, SIOCGIWNWID, &wrq);
-    printf("%s\n", &(wrq.u.nwid));
+
+    if (ioctl(skfd, SIOCGIWRANGE, &wrq) < 0) {
+        printf("Failed to fetch signal range: %s", strerror(errno));
+        return;
+    }
+
+    // Get signal level
+    memset(&wrq, 0, sizeof(struct iwreq));
+    wrq.u.data.pointer = &stats;
+    wrq.u.data.length = sizeof(stats);
+    wrq.u.data.flags = 1;
+    strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
+
+    if (ioctl(skfd, SIOCGIWSTATS, &wrq) < 0) {
+        printf("Unable to get signal level: %s\n", strerror(errno));
+        return;
+    }
+
+    if ((stats.qual.updated & IW_QUAL_DBM) || (stats.qual.level > range.max_qual.level)) {
+        if (!(stats.qual.updated & IW_QUAL_LEVEL_INVALID)) {
+            int db_level = stats.qual.level;
+
+            if (db_level >= 64) {
+                db_level -= 0x100;
+            }
+
+            printf("level:%d dBm", db_level);
+            int quality = 2 * (db_level + 100);
+            quality = quality < 0 ? 0 : quality > 100 ? 100 : quality;
+            printf("quality: %d%%\n", quality);
+        }
+    }
 }
 
 int main (int argc, char **argv)
