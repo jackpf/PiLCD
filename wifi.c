@@ -7,6 +7,7 @@
 #include <linux/wireless.h>
 #include <sys/ioctl.h>
 #include <errno.h>
+#include <math.h>
 
 struct ifaddrs *get_interface(char *ifname)
 {
