@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <ifaddrs.h>
@@ -8,15 +9,38 @@
 #include <sys/ioctl.h>
 #include <errno.h>
 #include <math.h>
+#include <stdbool.h>
 
-struct ifaddrs *get_interface(char *ifname)
+static int skfd;
+static struct iwreq wrq;
+
+bool wifi_init()
+{
+    if ((skfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        printf("Failed to open socket: %s\n", strerror(errno));
+        return false;
+    } else {
+        return true;
+    }
+}
+
+bool _supports_wlan(char *ifname)
+{
+    // Check interface is wlan
+    memset(&wrq, 0, sizeof(struct iwreq));
+    strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
+
+    return ioctl(skfd, SIOCGIWNAME, &wrq) == 0;
+}
+
+struct ifaddrs *wifi_find_if()
 {
     struct ifaddrs *ifap, *ifa;
 
     getifaddrs(&ifap);
 
     for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
-        if (ifa->ifa_addr != NULL && ifa->ifa_addr->sa_family == AF_INET && strcmp(ifa->ifa_name, ifname) == 0) {
+        if (ifa->ifa_addr != NULL && ifa->ifa_addr->sa_family == AF_INET && _supports_wlan(ifa->ifa_name)) {
             freeifaddrs(ifap);
             return ifa;
         }
@@ -26,37 +50,37 @@ struct ifaddrs *get_interface(char *ifname)
     return NULL;
 }
 
-void blah(char *ifname)
+struct wifi_info {
+    char *ifa_name;
+    char *addr;
+    int sig;
+};
+
+struct wifi_info *wifi_getinfo(struct ifaddrs *ifa)
 {
-    int skfd;
-    struct iwreq wrq;
     struct iw_statistics stats;
     struct iw_range range;
     struct iw_quality quality;
+    struct wifi_info *info = (struct wifi_info *) malloc(sizeof(struct wifi_info));
 
-    if ((skfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        printf("Failed to open socket: %s\n", strerror(errno));
-    }
+    // Some interface data
+    info->ifa_name = malloc(sizeof(ifa->ifa_name));
+    strcpy(info->ifa_name, ifa->ifa_name);
 
-    // Check interface is wlan
-    memset(&wrq, 0, sizeof(struct iwreq));
-    strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
-    
-    if (ioctl(skfd, SIOCGIWNAME, &wrq) < 0) {
-        printf("Interface does not support wlan\n");
-        return;
-    }
+    struct sockaddr_in *sa = (struct sockaddr_in *) ifa->ifa_addr;
+    info->addr = (char *) malloc(sizeof(inet_ntoa(sa->sin_addr)));
+    info->addr = inet_ntoa(sa->sin_addr);
 
     // Get signal range
     memset(&wrq, 0, sizeof(struct iwreq));
     wrq.u.data.pointer = &range;
     wrq.u.data.length = sizeof(range);
     wrq.u.data.flags = 0;
-    strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
+    strncpy(wrq.ifr_name, ifa->ifa_name, IFNAMSIZ);
 
     if (ioctl(skfd, SIOCGIWRANGE, &wrq) < 0) {
         printf("Unable to get signal range: %s", strerror(errno));
-        return;
+        return NULL;
     }
 
     // Get signal level
@@ -64,11 +88,11 @@ void blah(char *ifname)
     wrq.u.data.pointer = &stats;
     wrq.u.data.length = sizeof(stats);
     wrq.u.data.flags = 1;
-    strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
+    strncpy(wrq.ifr_name, ifa->ifa_name, IFNAMSIZ);
 
     if (ioctl(skfd, SIOCGIWSTATS, &wrq) < 0) {
         printf("Unable to get signal level: %s\n", strerror(errno));
-        return;
+        return NULL;
     }
 
     if ((stats.qual.updated & IW_QUAL_DBM) || (stats.qual.level > range.max_qual.level)) {
@@ -80,28 +104,22 @@ void blah(char *ifname)
                 db_level -= 0x100;
             }
 
-            printf("level:%d dBm", db_level);
-            int quality = round((db_level + 192.0) / 255.0 * 100.0);
-            quality = quality < 0 ? 0 : quality > 100 ? 100 : quality;
-            printf("quality: %d%%\n", quality);
+            info->sig = db_level;
         }
     }
 }
 
 int main (int argc, char **argv)
 {
-    struct ifaddrs *ifa = get_interface("wlan0" /*TODO: arg */);
+    wifi_init();
+    struct ifaddrs *ifa = wifi_find_if();
 
     if (ifa != NULL) {
-        struct sockaddr_in *sa = (struct sockaddr_in *) ifa->ifa_addr;
-        char *addr = inet_ntoa(sa->sin_addr);
-        printf("Interface: %s\tAddress: %s\n", ifa->ifa_name, addr);
+        struct wifi_info *info = wifi_getinfo(ifa);
+        printf("Name: %s\tAddr: %s\tSignal: %ddBm\n", info->ifa_name, info->addr, info->sig);
     } else {
-        printf("No interface found\n");
+        printf("No wifi interface found\n");
     }
-
-    blah("wlan0");
 
     return 0;
 }
-
