@@ -13,3 +13,4 @@ struct mem_info {
 };
 
 struct mem_info *mem_get_usage();
+char *filesize_h(long);

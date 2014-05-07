@@ -22,7 +22,7 @@ void mem_display()
 
     printf(
         "\rMemory load: %s",
-        _filesize_h(mem_usage->used)
+        filesize_h(mem_usage->used)
     );
     fflush(stdout);
 
@@ -56,6 +56,10 @@ void wifi_display()
 
 int main(int argc, char **argv)
 {
+    typedef void (*display_func)(void);
+
+    display_func displays[3] = {&cpu_display, &mem_display, &wifi_display};
+
     do {
         cpu_display();
     } while (true);

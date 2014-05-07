@@ -15,7 +15,7 @@ struct mem_info *mem_get_usage()
     return mem_usage;
 }
 
-static char *_filesize_h(long sz)
+char *filesize_h(long sz)
 {
     char *unit_map[] = {"GB", "MB", "KB", "bytes"};
     int i, j;
