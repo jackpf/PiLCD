@@ -25,7 +25,7 @@ int kbhit_consume()
 {
     int b = kbhit();
 
-    for (int i = 0; i < kbhit(); i++) {
+    for (int i = 0; i < b; i++) {
         getchar();
     }
 

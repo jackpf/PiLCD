@@ -62,7 +62,7 @@ struct wifi_info *wifi_getinfo(struct ifaddrs *ifa)
     strncpy(wrq.ifr_name, ifa->ifa_name, IFNAMSIZ);
 
     if (ioctl(skfd, SIOCGIWRANGE, &wrq) < 0) {
-        printf("Unable to get signal range: %s", strerror(errno));
+        printf("Unable to get signal range: %s\n", strerror(errno));
         return NULL;
     }
 

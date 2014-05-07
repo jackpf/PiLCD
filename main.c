@@ -9,7 +9,7 @@ void cpu_display()
     struct cpu_info *cpu_usage = cpu_get_usage();
 
     printf(
-        "\rCPU load: %.0f%%, CPU temp: %.0f",
+        "\33[2K\rCPU load: %.0f%%, CPU temp: %.0f",
         cpu_usage->cpu_time / cpu_usage->sys_time * 100,
         cpu_usage->temp
     );
@@ -23,7 +23,7 @@ void mem_display()
     struct mem_info *mem_usage = mem_get_usage();
 
     printf(
-        "\rMemory load: %s",
+        "\33[2K\rMemory load: %s",
         filesize_h(mem_usage->used)
     );
     fflush(stdout);
@@ -47,8 +47,10 @@ void wifi_display()
     if (ifa != NULL) {
         struct wifi_info *info = wifi_getinfo(ifa);
 
-        printf("\rName: %s\tAddr: %s\tSignal: %ddBm", info->ifa_name, info->addr, info->sig);
-        fflush(stdout);
+        if (info != NULL) {
+            printf("\33[2K\rName: %s\tAddr: %s\tSignal: %ddBm", info->ifa_name, info->addr, info->sig);
+            fflush(stdout);
+        }
 
         free(info);
     } else {
@@ -66,7 +68,10 @@ int main(int argc, char **argv)
 
     do {
         displays[i]();
-        sleep(1);
+
+        if (*displays[i] != *cpu_display) { // Only sleep if not on cpu since it takes 1s to check the cpu info anyway
+            sleep(1);
+        }
 
         if (kbhit_consume() > 0) {
             i = i < 2 ? i + 1 : 0;
