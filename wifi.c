@@ -114,10 +114,11 @@ int main (int argc, char **argv)
 {
     wifi_init();
     struct ifaddrs *ifa = wifi_find_if();
+    struct wifi_info *info;
 
     if (ifa != NULL) {
         do {
-            struct wifi_info *info = wifi_getinfo(ifa);
+            info = wifi_getinfo(ifa);
             printf("\rName: %s\tAddr: %s\tSignal: %ddBm", info->ifa_name, info->addr, info->sig);
             fflush(stdout);
             sleep(1);
