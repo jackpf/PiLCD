@@ -63,7 +63,7 @@ struct cpu_info *cpu_get_usage()
     return cpu_usage;
 }
 
-void cpu_display(cpu_info *cpu_usage)
+void cpu_display(struct cpu_info *cpu_usage)
 {
     printf(
         "\rCPU load: %.0f%%, CPU temp: %.0f",

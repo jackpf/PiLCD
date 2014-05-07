@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include <time.h>
 #include <math.h>
-#include "lib/kbhit.h"
 
 struct cpu_info {
     double sys_time;
@@ -15,4 +14,4 @@ struct cpu_info {
 };
 
 struct cpu_info *cpu_get_usage();
-void cpu_display(cpu_info *);
+void cpu_display(struct cpu_info *);
