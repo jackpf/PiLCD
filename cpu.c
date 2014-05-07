@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include <math.h>
+#include "lib/kbhit.h"
 
 struct mem_info {
     long total;
@@ -120,6 +121,12 @@ int main(int argc, char **argv)
     struct cpu_info *cpu_usage;
 
     do {
+        int b = kbhit_consume();
+        if (b > 0) {
+            printf("\r\n");
+            break;
+        }
+
         mem_usage = get_mem_usage();
         cpu_usage = get_cpu_usage();
 
