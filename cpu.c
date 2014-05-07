@@ -1,12 +1,5 @@
 #include "cpu.h"
 
-struct cpu_info {
-    double sys_time;
-    double idle_time;
-    double cpu_time;
-    double temp;
-};
-
 double _get_cpu_temp()
 {
     FILE *fh = fopen("/sys/class/thermal/thermal_zone0/temp", "rd");

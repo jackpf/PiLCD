@@ -7,7 +7,12 @@
 #include <math.h>
 #include "lib/kbhit.h"
 
-struct cpu_info;
+struct cpu_info {
+    double sys_time;
+    double idle_time;
+    double cpu_time;
+    double temp;
+};
 
 struct cpu_info *cpu_get_usage();
 void cpu_display(cpu_info *);

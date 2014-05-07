@@ -12,7 +12,11 @@
 #include <math.h>
 #include <stdbool.h>
 
-struct wifi_info;
+struct wifi_info {
+    char *ifa_name;
+    char *addr;
+    int sig;
+};
 
 bool wifi_init();
 struct ifaddrs *wifi_find_if();

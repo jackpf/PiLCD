@@ -39,12 +39,6 @@ struct ifaddrs *wifi_find_if()
     return NULL;
 }
 
-struct wifi_info {
-    char *ifa_name;
-    char *addr;
-    int sig;
-};
-
 struct wifi_info *wifi_getinfo(struct ifaddrs *ifa)
 {
     struct iw_statistics stats;
