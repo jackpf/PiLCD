@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -115,8 +116,12 @@ int main (int argc, char **argv)
     struct ifaddrs *ifa = wifi_find_if();
 
     if (ifa != NULL) {
-        struct wifi_info *info = wifi_getinfo(ifa);
-        printf("Name: %s\tAddr: %s\tSignal: %ddBm\n", info->ifa_name, info->addr, info->sig);
+        do {
+            struct wifi_info *info = wifi_getinfo(ifa);
+            printf("\rName: %s\tAddr: %s\tSignal: %ddBm", info->ifa_name, info->addr, info->sig);
+            fflush(stdout);
+            sleep(1);
+        } while (true);
     } else {
         printf("No wifi interface found\n");
     }

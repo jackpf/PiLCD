@@ -129,11 +129,12 @@ int main(int argc, char **argv)
             printf("CPU load read error\n");
         } else {
             printf(
-                "CPU load: %.0f%%, CPU temp: %.0f, Memory load: %s\n",
+                "\rCPU load: %.0f%%, CPU temp: %.0f, Memory load: %s",
                 cpu_usage->cpu_time / cpu_usage->sys_time * 100,
                 cpu_usage->temp,
                 filesize_h(mem_usage->used)
             );
+            fflush(stdout);
         }
     } while (true);
 
