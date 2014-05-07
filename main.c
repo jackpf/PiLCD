@@ -1,6 +1,8 @@
 #include "cpu.h"
 #include "memory.h"
 #include "wifi.h"
+#include "lib/filesize_h.h"
+#include "lib/kbhit.h"
 
 void cpu_display()
 {
@@ -60,7 +62,14 @@ int main(int argc, char **argv)
 
     display_func displays[3] = {&cpu_display, &mem_display, &wifi_display};
 
+    int i = 0;
+
     do {
-        cpu_display();
+        displays[i]();
+        sleep(1);
+
+        if (kbhit_consume() > 0) {
+            i = i < 2 ? i + 1 : 0;
+        }
     } while (true);
 }
