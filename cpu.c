@@ -62,14 +62,3 @@ struct cpu_info *cpu_get_usage()
 
     return cpu_usage;
 }
-
-void cpu_display(struct cpu_info *cpu_usage)
-{
-    printf(
-        "\rCPU load: %.0f%%, CPU temp: %.0f",
-        cpu_usage->cpu_time / cpu_usage->sys_time * 100,
-        cpu_usage->temp
-    );
-
-    fflush(stdout);
-}

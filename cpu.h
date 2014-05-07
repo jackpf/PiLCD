@@ -14,4 +14,3 @@ struct cpu_info {
 };
 
 struct cpu_info *cpu_get_usage();
-void cpu_display(struct cpu_info *);

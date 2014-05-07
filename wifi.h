@@ -21,4 +21,3 @@ struct wifi_info {
 bool wifi_init();
 struct ifaddrs *wifi_find_if();
 struct wifi_info *wifi_getinfo(struct ifaddrs *);
-void wifi_display(struct wifi_info *);

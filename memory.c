@@ -31,13 +31,3 @@ static char *_filesize_h(long sz)
 
     return str;
 }
-
-void mem_display(struct mem_info *mem_usage)
-{
-    printf(
-        "\rMemory load: %s",
-        _filesize_h(mem_usage->used)
-    );
-    
-    fflush(stdout);
-}

@@ -91,9 +91,3 @@ struct wifi_info *wifi_getinfo(struct ifaddrs *ifa)
         }
     }
 }
-
-void wifi_display(struct wifi_info *info)
-{
-    printf("\rName: %s\tAddr: %s\tSignal: %ddBm", info->ifa_name, info->addr, info->sig);
-    fflush(stdout);
-}
