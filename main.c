@@ -8,7 +8,7 @@ int main(int argc, char **argv)
 
     do {
         cpu_usage = cpu_get_usage();
-        cpu_display(cpu_sage);
+        cpu_display(cpu_usage);
     } while (true);
 
     return 0;
