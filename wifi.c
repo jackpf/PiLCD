@@ -1,16 +1,4 @@
-#include <unistd.h>
-#include <stdlib.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <ifaddrs.h>
-#include <stdio.h>
-#include <net/if.h>
-#include <string.h>
-#include <linux/wireless.h>
-#include <sys/ioctl.h>
-#include <errno.h>
-#include <math.h>
-#include <stdbool.h>
+#include "wifi.h"
 
 static int skfd;
 static struct iwreq wrq;
@@ -110,22 +98,8 @@ struct wifi_info *wifi_getinfo(struct ifaddrs *ifa)
     }
 }
 
-int main (int argc, char **argv)
+void wifi_display(struct wifi_info *info)
 {
-    wifi_init();
-    struct ifaddrs *ifa = wifi_find_if();
-    struct wifi_info *info;
-
-    if (ifa != NULL) {
-        do {
-            info = wifi_getinfo(ifa);
-            printf("\rName: %s\tAddr: %s\tSignal: %ddBm", info->ifa_name, info->addr, info->sig);
-            fflush(stdout);
-            sleep(1);
-        } while (true);
-    } else {
-        printf("No wifi interface found\n");
-    }
-
-    return 0;
+    printf("\rName: %s\tAddr: %s\tSignal: %ddBm", info->ifa_name, info->addr, info->sig);
+    fflush(stdout);
 }

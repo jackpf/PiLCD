@@ -1,32 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdbool.h>
-#include <time.h>
-#include <math.h>
-#include "lib/kbhit.h"
-
-struct mem_info {
-    long total;
-    long free;
-    long used;
-};
-
-struct mem_info *get_mem_usage()
-{
-    struct mem_info *mem_usage = (struct mem_info *) malloc(sizeof(struct mem_info));
-
-    long total_pages = sysconf(_SC_PHYS_PAGES);
-    long free_pages = sysconf(_SC_AVPHYS_PAGES);
-    long page_size = sysconf(_SC_PAGE_SIZE);
-
-    mem_usage->total = total_pages * page_size;
-    mem_usage->free = free_pages * page_size;
-    mem_usage->used = mem_usage->total - mem_usage->free;
-
-    return mem_usage;
-}
+#include "cpu.h"
 
 struct cpu_info {
     double sys_time;
@@ -52,7 +24,7 @@ double _get_cpu_temp()
     return strtod(buffer, NULL) / 1000.0;
 }
 
-struct cpu_info *get_cpu_usage()
+struct cpu_info *cpu_get_usage()
 {
     long double sys_time[2], idle_time[2];
     struct cpu_info *cpu_usage = (struct cpu_info *) malloc(sizeof(struct cpu_info));
@@ -98,52 +70,13 @@ struct cpu_info *get_cpu_usage()
     return cpu_usage;
 }
 
-char *filesize_h(long sz)
+void cpu_display(cpu_info *cpu_usage)
 {
-    char *unit_map[] = {"GB", "MB", "KB", "bytes"};
-    int i, j;
+    printf(
+        "\rCPU load: %.0f%%, CPU temp: %.0f",
+        cpu_usage->cpu_time / cpu_usage->sys_time * 100,
+        cpu_usage->temp
+    );
 
-    for (i = 30, j = 0; i >= 0; i -= 10, j++) {
-        if (sz >= 1 << i) {
-            break;
-        }
-    }
-
-    char *str = (char *) malloc(strlen(unit_map[j]) + 1 + (int) log10(sz / (1 << i)));
-    sprintf(str, "%ld%s", sz / (1 << i), unit_map[j]);
-
-    return str;
-}
-
-int main(int argc, char **argv)
-{
-    struct mem_info *mem_usage;
-    struct cpu_info *cpu_usage;
-
-    do {
-        int b = kbhit_consume();
-        if (b > 0) {
-            printf("\r\n");
-            break;
-        }
-
-        mem_usage = get_mem_usage();
-        cpu_usage = get_cpu_usage();
-
-        if (mem_usage == NULL) {
-            printf("Memory load read error\n");
-        } else if (cpu_usage == NULL) {
-            printf("CPU load read error\n");
-        } else {
-            printf(
-                "\rCPU load: %.0f%%, CPU temp: %.0f, Memory load: %s",
-                cpu_usage->cpu_time / cpu_usage->sys_time * 100,
-                cpu_usage->temp,
-                filesize_h(mem_usage->used)
-            );
-            fflush(stdout);
-        }
-    } while (true);
-
-    return 0;
+    fflush(stdout);
 }
