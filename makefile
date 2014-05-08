@@ -1,7 +1,7 @@
 debug = -g
 
 main: main.c cpu.c cpu.h memory.c memory.h wifi.c wifi.h
-	gcc $(debug) -lm -std=c99 cpu.c wifi.c memory.c ./lib/*.c main.c -o ./bin/pi-lcd
+	gcc $(debug) -lm -std=c99 cpu.c wifi.c memory.c ./lib/*.c main.c -o ./bin/main
 
 lcd: lcd.c
-	gcc $(debug) lcd.c -lwiringPi -lwiringPiDev -o ./bin/lcd
+	gcc $(debug) -lm -lwiringPi -lwiringPiDev -std=c99 lcd.c cpu.c wifi.c memory.c ./lib/*.c -o ./bin/lcd

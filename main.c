@@ -77,4 +77,6 @@ int main(int argc, char **argv)
             i = i < 2 ? i + 1 : 0;
         }
     } while (true);
+
+    return 0;
 }
