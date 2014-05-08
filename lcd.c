@@ -82,8 +82,8 @@ void wifi_display()
         if (info != NULL) {
             lcdHome(lcd);
             lcdPrintf(lcd,
-                "Name: %s\tAddr: %s\tSignal: %ddBm",
-                info->ifa_name,
+                "%s\nSignal: %ddBm",
+                //info->ifa_name,
                 info->addr,
                 info->sig
             );
@@ -96,17 +96,31 @@ void wifi_display()
     }
 }
 
+// More info: https://github.com/Gadgetoid/WiringPi2-Python/blob/master/WiringPi/examples/lcd-adafruit.c
+void lcdBacklight(int on)
+{
+    pinMode(AF_RED,   OUTPUT);
+    pinMode(AF_GREEN, OUTPUT);
+    pinMode(AF_BLUE,  OUTPUT);
+
+    digitalWrite(AF_RED,   !(on & 1));
+    digitalWrite(AF_GREEN, !(on & 2));
+    digitalWrite(AF_BLUE,  !(on & 4));
+}
+
 int main(int argc, char **argv)
 {
     wiringPiSetup();
     mcp23017Setup(AF_BASE, I2C_ADDR);
-    int lcd = lcdInit (2, 16, 4, AF_RS, AF_E, AF_DB4, AF_DB5, AF_DB6, AF_DB7, 0, 0, 0, 0);
+    int lcd = lcdInit(2, 16, 4, AF_RS, AF_E, AF_DB4, AF_DB5, AF_DB6, AF_DB7, 0, 0, 0, 0);
+
+    lcdBacklight(true);
 
     typedef void (*display_func)(void);
 
     display_func displays[3] = {&cpu_display, &mem_display, &wifi_display};
 
-    int i = 0;
+    int i = 2;//0;
 
     do {
         displays[i]();
@@ -115,6 +129,9 @@ int main(int argc, char **argv)
             sleep(1);
         }
     } while (true);
+
+    lcdHome(lcd);
+    lcdBacklight(false);
 
     return 0;
 }
