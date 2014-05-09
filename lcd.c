@@ -13,9 +13,7 @@
 
 // Defines for the Adafruit Pi LCD interface board
 #define AF_BASE     100
-#define AF_RED      (AF_BASE + 6)
-#define AF_GREEN    (AF_BASE + 7)
-#define AF_BLUE     (AF_BASE + 8)
+#define AF_LED      (AF_BASE + 6)
 
 #define AF_E        (AF_BASE + 13)
 #define AF_RW       (AF_BASE + 14)
@@ -32,6 +30,9 @@
 #define AF_UP       (AF_BASE +  3)
 #define AF_LEFT     (AF_BASE +  4)
 
+#define AF_DEGREE   0
+uint8_t AF_DEGREE_DEF[8] = {140, 146, 146, 140, 128, 128, 128, 128};
+
 #define I2C_ADDR    0x20
 
 int lcd;
@@ -42,10 +43,11 @@ void cpu_display()
 
     lcdHome(lcd);
     lcdPrintf(lcd,
-        "CPU load: %.0f%%\nCPU temp: %.0f",
+        "CPU load: %.0f%\nCPU temp: %.0f",
         cpu_usage->cpu_time / cpu_usage->sys_time * 100,
         cpu_usage->temp
     );
+    lcdPutchar(lcd, AF_DEGREE);
 
     free(cpu_usage);
 }
@@ -96,31 +98,41 @@ void wifi_display()
     }
 }
 
-// More info: https://github.com/Gadgetoid/WiringPi2-Python/blob/master/WiringPi/examples/lcd-adafruit.c
-void lcdBacklight(int on)
+int lcd_setup()
 {
-    pinMode(AF_RED,   OUTPUT);
-    pinMode(AF_GREEN, OUTPUT);
-    pinMode(AF_BLUE,  OUTPUT);
+    wiringPiSetupSys();
+    mcp23017Setup(AF_BASE, I2C_ADDR);
 
-    digitalWrite(AF_RED,   !(on & 1));
-    digitalWrite(AF_GREEN, !(on & 2));
-    digitalWrite(AF_BLUE,  !(on & 4));
+    // Backlight LED
+    pinMode(AF_LED, OUTPUT);
+
+    // Input buttons
+    for (int i = 0 ; i <= 4 ; i++)
+    {
+        pinMode(AF_BASE + i, INPUT);
+        pullUpDnControl(AF_BASE + i, PUD_UP); // Enable pull-ups, switches close to 0v
+    }
+
+    // Control signals
+    pinMode(AF_RW, OUTPUT);
+    digitalWrite(AF_RW, LOW); // Not used with wiringPi - always in write mode
+
+    return lcdInit(2, 16, 4, AF_RS, AF_E, AF_DB4, AF_DB5, AF_DB6, AF_DB7, 0, 0, 0, 0);
 }
 
 int main(int argc, char **argv)
 {
-    wiringPiSetup();
-    mcp23017Setup(AF_BASE, I2C_ADDR);
-    int lcd = lcdInit(2, 16, 4, AF_RS, AF_E, AF_DB4, AF_DB5, AF_DB6, AF_DB7, 0, 0, 0, 0);
+    lcd = lcd_setup();
 
-    lcdBacklight(true);
+    // Turn on LED
+    digitalWrite(AF_LED, 0x0);
+
+    lcdCharDef(lcd, AF_DEGREE, AF_DEGREE_DEF);
 
     typedef void (*display_func)(void);
-
     display_func displays[3] = {&cpu_display, &mem_display, &wifi_display};
 
-    int i = 2;//0;
+    int i = 0;
 
     do {
         displays[i]();
@@ -131,7 +143,6 @@ int main(int argc, char **argv)
     } while (true);
 
     lcdHome(lcd);
-    lcdBacklight(false);
 
     return 0;
 }
