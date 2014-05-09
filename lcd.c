@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <signal.h>
 
 #include <wiringPi.h>
 #include <mcp23017.h>
@@ -10,30 +11,7 @@
 #include "memory.h"
 #include "wifi.h"
 #include "lib/filesize_h.h"
-
-// Defines for the Adafruit Pi LCD interface board
-#define AF_BASE     100
-#define AF_LED      (AF_BASE + 6)
-
-#define AF_E        (AF_BASE + 13)
-#define AF_RW       (AF_BASE + 14)
-#define AF_RS       (AF_BASE + 15)
-
-#define AF_DB4      (AF_BASE + 12)
-#define AF_DB5      (AF_BASE + 11)
-#define AF_DB6      (AF_BASE + 10)
-#define AF_DB7      (AF_BASE +  9)
-
-#define AF_SELECT   (AF_BASE +  0)
-#define AF_RIGHT    (AF_BASE +  1)
-#define AF_DOWN     (AF_BASE +  2)
-#define AF_UP       (AF_BASE +  3)
-#define AF_LEFT     (AF_BASE +  4)
-
-#define AF_DEGREE   0
-uint8_t AF_DEGREE_DEF[8] = {140, 146, 146, 140, 128, 128, 128, 128};
-
-#define I2C_ADDR    0x20
+#include "lib/adafruit.h"
 
 int lcd;
 
@@ -58,8 +36,9 @@ void mem_display()
 
     lcdHome(lcd);
     lcdPrintf(lcd,
-        "Memory load: %s",
-        filesize_h(mem_usage->used)
+        "Used: %s\nFree: %s",
+        filesize_h(mem_usage->used),
+        filesize_h(mem_usage->free)
     );
 
     free(mem_usage);
@@ -68,13 +47,11 @@ void mem_display()
 void wifi_display()
 {
     static bool initialised = false;
-
     static struct ifaddrs *ifa;
 
     if (!initialised) {
         wifi_init();
         ifa = wifi_find_if();
-
         initialised = true;
     }
 
@@ -85,7 +62,6 @@ void wifi_display()
             lcdHome(lcd);
             lcdPrintf(lcd,
                 "%s\nSignal: %ddBm",
-                //info->ifa_name,
                 info->addr,
                 info->sig
             );
@@ -93,7 +69,7 @@ void wifi_display()
 
         free(info);
     } else {
-        lcdHome(lcd);
+        lcdClear(lcd);
         lcdPuts(lcd, "No interface found");
     }
 }
@@ -120,29 +96,102 @@ int lcd_setup()
     return lcdInit(2, 16, 4, AF_RS, AF_E, AF_DB4, AF_DB5, AF_DB6, AF_DB7, 0, 0, 0, 0);
 }
 
+void lcd_toggle_led()
+{
+    static int state = false;
+
+    state = !state;
+
+    digitalWrite(AF_LED, !state);
+}
+
+int fd[2];
+
+int display = 0;
+typedef void (*display_func)(void);
+display_func displays[] = {&cpu_display, &mem_display, &wifi_display};
+
+int key_listener()
+{
+    bool pressed[AF_KEYS_R];
+    while (true) {
+        for (int i = 0; i < sizeof(AF_KEYS) / sizeof(int); i++) {
+            if (digitalRead(AF_KEYS[i]) == HIGH) {
+                pressed[AF_KEYS[i]] = true;
+            }
+            if (pressed[AF_KEYS[i]] && digitalRead(AF_KEYS[i]) == LOW) {
+                pressed[AF_KEYS[i]] = false;
+                write(fd[1], &AF_KEYS[i], sizeof(int));
+                kill(getppid(), SIGUSR1);
+            }
+        }
+        delay(50);
+    }
+
+    return 0;
+}
+
+static void key_handler(int sig, siginfo_t *siginfo, void *context)
+{
+    int key;
+    read(fd[0], &key, sizeof(int));
+
+    size_t displays_sz = sizeof(displays) / sizeof(display_func);
+
+    switch (key) {
+        case AF_LEFT:
+            display = display - 1 >= 0 ? display - 1 : displays_sz - 1;
+        break;
+        case AF_RIGHT:
+            display = display + 1 < displays_sz ? display + 1 : 0;
+        break;
+        case AF_SELECT:
+            lcd_toggle_led();
+        break;
+    }
+}
+
 int main(int argc, char **argv)
 {
     lcd = lcd_setup();
 
-    // Turn on LED
-    digitalWrite(AF_LED, 0x0);
+    pipe(fd);
 
+    pid_t pid = fork();
+
+    if (pid == 0) {
+        close(fd[0]);
+        return key_listener();
+    }
+
+    close(fd[1]);
+
+    struct sigaction act;
+
+    act.sa_sigaction = &key_handler;
+    act.sa_flags = SA_SIGINFO;
+
+    sigaction(SIGUSR1, &act, NULL);
+
+    // Define degree symbol
     lcdCharDef(lcd, AF_DEGREE, AF_DEGREE_DEF);
 
-    typedef void (*display_func)(void);
-    display_func displays[3] = {&cpu_display, &mem_display, &wifi_display};
-
-    int i = 0;
+    int display_prev;
 
     do {
-        displays[i]();
+        if (display_prev != display) {
+            lcdClear(lcd);
+        }
+        display_prev = display;
 
-        if (*displays[i] != *cpu_display) { // Only sleep if not on cpu since it takes 1s to check the cpu info anyway
+        displays[display]();
+
+        if (*displays[display] != *cpu_display) { // Only sleep if not on cpu since it takes 1s to check the cpu info anyway
             sleep(1);
         }
     } while (true);
 
-    lcdHome(lcd);
+    lcdClear(lcd);
 
     return 0;
 }
