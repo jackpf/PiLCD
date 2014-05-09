@@ -23,3 +23,5 @@ cd PiLCD
 make lcd # Or make main to try the console version
 sudo ./bin/lcd
 ```
+
+Once running, the select button toggles the backlight and the left and right buttons toggle through the various information displays.
