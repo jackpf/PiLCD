@@ -55,8 +55,11 @@ void wifi_display()
 
     if (!initialised) {
         wifi_init();
-        ifa = wifi_find_if();
         initialised = true;
+    }
+
+    if (ifa == NULL) {
+        ifa = wifi_find_if();
     }
 
     if (ifa != NULL) {
