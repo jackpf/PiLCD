@@ -27,6 +27,8 @@ make lcd # Or make main to try the console version
 sudo ./bin/lcd
 ```
 
-Currently some values are hardcoded, such as the WLAN interface name. Eventually these will be parameters, or stored in a config file.
+There's an init.d script as well which you can use to run as a startup daemon.
+
+Some of the WLAN stuff may not work on other systems currently as it may be fairly specific to my setup.
 
 Once running, the select button toggles the backlight and the left and right buttons toggle through the various information displays.
