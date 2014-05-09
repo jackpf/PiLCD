@@ -19,10 +19,14 @@ void cpu_display()
 {
     struct cpu_info *cpu_usage = cpu_get_usage();
 
+    float usage = cpu_usage->cpu_time / cpu_usage->sys_time * 100;
+
     lcdHome(lcd);
     lcdPrintf(lcd,
-        "CPU load: %.0f%\nCPU temp: %.0f",
-        cpu_usage->cpu_time / cpu_usage->sys_time * 100,
+        "CPU load: %s%s%.0f%\nCPU temp:  %.0f",
+        usage < 100 ? " " : "",
+        usage < 10 ? " " : "",
+        usage,
         cpu_usage->temp
     );
     lcdPutchar(lcd, AF_DEGREE);
