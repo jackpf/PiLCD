@@ -90,7 +90,7 @@ int lcd_setup()
     pinMode(AF_LED, OUTPUT);
 
     // Input buttons
-    for (int i = 0 ; i <= 4 ; i++) {
+    for (int i = 0; i <= 4; i++) {
         pinMode(AF_BASE + i, INPUT);
         pullUpDnControl(AF_BASE + i, PUD_UP); // Enable pull-ups, switches close to 0v
     }
