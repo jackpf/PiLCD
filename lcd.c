@@ -10,6 +10,7 @@
 #include "cpu.h"
 #include "memory.h"
 #include "wifi.h"
+#include "lan.h"
 #include "lib/filesize_h.h"
 #include "lib/adafruit.h"
 
@@ -94,7 +95,7 @@ void wifi_display()
         ifa = wifi_find_if();
 
         if (ifa == NULL) { // Fallback on eth0
-            ifa = wifi_find_if_by_name("eth0");
+            ifa = lan_find_if();
         }
     }
 

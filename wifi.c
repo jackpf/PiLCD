@@ -39,23 +39,6 @@ struct ifaddrs *wifi_find_if()
     return NULL;
 }
 
-struct ifaddrs *wifi_find_if_by_name(char *name)
-{
-    struct ifaddrs *ifap, *ifa;
-
-    getifaddrs(&ifap);
-
-    for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
-        if (ifa->ifa_addr != NULL && ifa->ifa_addr->sa_family == AF_INET && strcmp(ifa->ifa_name, name) == 0) {
-            freeifaddrs(ifap);
-            return ifa;
-        }
-    }
-
-    freeifaddrs(ifap);
-    return NULL;
-}
-
 struct wifi_info *wifi_getinfo(struct ifaddrs *ifa)
 {
     struct iw_statistics stats;

@@ -12,12 +12,6 @@
 #include <math.h>
 #include <stdbool.h>
 
-struct wifi_info {
-    char *ifa_name;
-    char *addr;
-    signed int sig;
-};
+#define LAN_IF_NAME "eth0"
 
-bool wifi_init();
-struct ifaddrs *wifi_find_if();
-struct wifi_info *wifi_getinfo(struct ifaddrs *);
+struct ifaddrs *lan_find_if();
