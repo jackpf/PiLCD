@@ -104,7 +104,7 @@ int lcd_setup()
 
 void lcd_toggle_led()
 {
-    static int state = false;
+    static int state = true;
 
     state = !state;
 
