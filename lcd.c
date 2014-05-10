@@ -40,6 +40,12 @@ void cpu_display()
 {
     struct cpu_info *cpu_usage = cpu_get_usage();
 
+    if (cpu_usage == NULL) {
+        lcdClear(lcd);
+        lcdPuts(lcd, strerror(errno));
+        return;
+    }
+
     float usage = cpu_usage->cpu_time / cpu_usage->sys_time * 100;
 
     char line1[AF_COLS], line2[AF_COLS], load[3], temp[3];
@@ -69,6 +75,12 @@ void cpu_display()
 void mem_display()
 {
     struct mem_info *mem_usage = mem_get_usage();
+
+    if (mem_usage == NULL) {
+        lcdClear(lcd);
+        lcdPuts(lcd, strerror(errno));
+        return;
+    }
 
     char line1[AF_COLS], line2[AF_COLS];
     sprintf(line1, "Used: %s", filesize_h(mem_usage->used));
