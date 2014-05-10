@@ -81,6 +81,11 @@ void wifi_display()
     }
 }
 
+int fd[2];
+int display = 0, lcd_timer = -1;
+typedef void (*display_func)(void);
+display_func displays[] = {&cpu_display, &mem_display, &wifi_display};
+
 int lcd_setup()
 {
     wiringPiSetupSys();
@@ -109,13 +114,11 @@ void lcd_toggle_led()
     state = !state;
 
     digitalWrite(AF_LED, !state);
+
+    if (state == true) {
+        lcd_timer = 5;
+    }
 }
-
-int fd[2];
-
-int display = 0;
-typedef void (*display_func)(void);
-display_func displays[] = {&cpu_display, &mem_display, &wifi_display};
 
 int key_listener()
 {
@@ -189,6 +192,13 @@ int main(int argc, char **argv)
             lcdClear(lcd);
         }
         display_prev = display;
+
+         if (lcd_timer >= 0) {
+             lcd_timer--;
+             if (lcd_timer == 0) {
+                 lcd_toggle_led();
+             }
+         }
 
         displays[display]();
 
