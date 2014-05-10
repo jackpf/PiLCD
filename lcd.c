@@ -41,14 +41,25 @@ void cpu_display()
 
     float usage = cpu_usage->cpu_time / cpu_usage->sys_time * 100;
 
-    lcdHome(lcd);
-    lcdPrintf(lcd,
-        "CPU load: %s%s%.0f%\nCPU temp:  %.0f",
-        usage < 100 ? " " : "",
-        usage < 10 ? " " : "",
-        usage,
-        cpu_usage->temp
+    char line1[AF_COLS], line2[AF_COLS], load[3], temp[3];
+    snprintf(load, sizeof(load), "%.0f", usage);
+    sprintf(line1,
+        "%s%*s%%",
+        "CPU load:",
+        AF_COLS - strlen("CPU load:") - 1,
+        load
     );
+    snprintf(temp, sizeof(temp), "%.0f", cpu_usage->temp);
+    sprintf(line2,
+        "%s%*s",
+        "CPU temp:",
+        AF_COLS - strlen("CPU temp:") - 1,
+        temp
+    );
+
+    lcdHome(lcd);
+    lcdPrintf(lcd, "%*s", -(AF_COLS - 1), line1);
+    lcdPrintf(lcd, "%*s", -(AF_COLS - 1), line2);
     lcdPutchar(lcd, AF_DEGREE);
 
     free(cpu_usage);
@@ -58,12 +69,13 @@ void mem_display()
 {
     struct mem_info *mem_usage = mem_get_usage();
 
+    char line1[AF_COLS], line2[AF_COLS];
+    sprintf(line1, "Used: %s", filesize_h(mem_usage->used));
+    sprintf(line2, "Free: %s", filesize_h(mem_usage->free));
+
     lcdHome(lcd);
-    lcdPrintf(lcd,
-        "Used: %s\nFree: %s",
-        filesize_h(mem_usage->used),
-        filesize_h(mem_usage->free)
-    );
+    lcdPrintf(lcd, "%*s", -AF_COLS, line1);
+    lcdPrintf(lcd, "%*s", -AF_COLS, line2);
 
     free(mem_usage);
 }
@@ -80,19 +92,24 @@ void wifi_display()
 
     if (ifa == NULL) {
         ifa = wifi_find_if();
+
+        if (ifa == NULL) { // Fallback on eth0
+            ifa = wifi_find_if_by_name("eth0");
+        }
     }
 
     if (ifa != NULL) {
         struct wifi_info *info = wifi_getinfo(ifa);
 
+        char line1[AF_COLS], line2[AF_COLS];
+        sprintf(line1, "%s", inet_ntoa(((struct sockaddr_in *) ifa->ifa_addr)->sin_addr));
         if (info != NULL) {
-            lcdHome(lcd);
-            lcdPrintf(lcd,
-                "%s\nSignal: %ddBm",
-                info->addr,
-                info->sig
-            );
+            sprintf(line2, "Signal: %ddBm", info->sig);
         }
+
+        lcdHome(lcd);
+        lcdPrintf(lcd, "%*s", -AF_COLS, line1);
+        lcdPrintf(lcd, "%*s", -AF_COLS, line2);
 
         free(info);
     } else {
@@ -119,7 +136,7 @@ int lcd_setup()
     pinMode(AF_RW, OUTPUT);
     digitalWrite(AF_RW, LOW); // Not used with wiringPi - always in write mode
 
-    return lcdInit(2, 16, 4, AF_RS, AF_E, AF_DB4, AF_DB5, AF_DB6, AF_DB7, 0, 0, 0, 0);
+    return lcdInit(AF_ROWS, AF_COLS, AF_BITMODE, AF_RS, AF_E, AF_DB4, AF_DB5, AF_DB6, AF_DB7, 0, 0, 0, 0);
 }
 
 #define LCD_LED_ON      1

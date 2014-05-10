@@ -20,6 +20,10 @@
 #define AF_NONE     0
 const int AF_KEYS[] = {AF_SELECT, AF_RIGHT, AF_DOWN, AF_UP, AF_LEFT};
 
+#define AF_ROWS		2
+#define AF_COLS		16
+#define AF_BITMODE	4
+
 #define AF_DEGREE   0
 uint8_t AF_DEGREE_DEF[8] = {140, 146, 146, 140, 128, 128, 128, 128}; // Custom degree symbol
 

@@ -15,9 +15,10 @@
 struct wifi_info {
     char *ifa_name;
     char *addr;
-    int sig;
+    signed int sig;
 };
 
 bool wifi_init();
 struct ifaddrs *wifi_find_if();
+struct ifaddrs *wifi_find_if_by_name(char *);
 struct wifi_info *wifi_getinfo(struct ifaddrs *);
