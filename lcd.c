@@ -48,7 +48,7 @@ void cpu_display()
 
     float usage = cpu_usage->cpu_time / cpu_usage->sys_time * 100;
 
-    char line1[AF_COLS], line2[AF_COLS], load[3], temp[3];
+    char line1[AF_COLS], line2[AF_COLS], load[4], temp[4];
     snprintf(load, sizeof(load), "%.0f", usage);
     sprintf(line1,
         "%s%*s%%",
