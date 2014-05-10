@@ -13,7 +13,27 @@
 #include "lib/filesize_h.h"
 #include "lib/adafruit.h"
 
+/**
+ * Lcd file descriptor
+ */
 int lcd;
+
+/**
+ * Pipe file descriptor
+ */
+int fd[2];
+
+/**
+ * LCD vars
+ */
+int display = 0, lcd_timer = -1;
+
+/**
+ * Display registers
+ */
+typedef void (*display_func)(void);
+void cpu_display(void); void mem_display(void); void wifi_display(void);
+display_func displays[] = {&cpu_display, &mem_display, &wifi_display};
 
 void cpu_display()
 {
@@ -81,11 +101,6 @@ void wifi_display()
     }
 }
 
-int fd[2];
-int display = 0, lcd_timer = -1;
-typedef void (*display_func)(void);
-display_func displays[] = {&cpu_display, &mem_display, &wifi_display};
-
 int lcd_setup()
 {
     wiringPiSetupSys();
@@ -107,17 +122,25 @@ int lcd_setup()
     return lcdInit(2, 16, 4, AF_RS, AF_E, AF_DB4, AF_DB5, AF_DB6, AF_DB7, 0, 0, 0, 0);
 }
 
-void lcd_toggle_led()
-{
-    static int state = true;
+#define LCD_LED_ON      1
+#define LCD_LED_OFF     0
+#define LCD_LED_TOGGLE  -1
 
-    state = !state;
+void lcd_led(int state)
+{
+    static int last_state;
+
+    if (state == LCD_LED_TOGGLE) {
+        state = !((bool) last_state);
+    }
 
     digitalWrite(AF_LED, !state);
 
-    if (state == true) {
+    if (state == true && last_state == false) {
         lcd_timer = 5;
     }
+
+    last_state = state;
 }
 
 int key_listener()
@@ -155,9 +178,39 @@ static void key_handler(int sig, siginfo_t *siginfo, void *context)
             display = display + 1 < displays_sz ? display + 1 : 0;
         break;
         case AF_SELECT:
-            lcd_toggle_led();
+            lcd_led(LCD_LED_TOGGLE);
         break;
     }
+}
+
+int lcd_display()
+{
+    int display_prev;
+
+    // Start off with the display off
+    lcd_led(LCD_LED_OFF);
+
+    do {
+        if (display_prev != display) {
+            lcdClear(lcd);
+        }
+        display_prev = display;
+
+         if (lcd_timer >= 0) {
+             lcd_timer--;
+             if (lcd_timer == 0) {
+                 lcd_led(LCD_LED_OFF);
+             }
+         }
+
+        displays[display]();
+
+        if (*displays[display] != *cpu_display) { // Only sleep if not on cpu since it takes 1s to check the cpu info anyway
+            sleep(1);
+        }
+    } while (true);
+
+    return 0;
 }
 
 int main(int argc, char **argv)
@@ -182,32 +235,8 @@ int main(int argc, char **argv)
 
     sigaction(SIGUSR1, &act, NULL);
 
-    // Define degree symbol
+    // Register degree symbol
     lcdCharDef(lcd, AF_DEGREE, AF_DEGREE_DEF);
 
-    int display_prev;
-
-    do {
-        if (display_prev != display) {
-            lcdClear(lcd);
-        }
-        display_prev = display;
-
-         if (lcd_timer >= 0) {
-             lcd_timer--;
-             if (lcd_timer == 0) {
-                 lcd_toggle_led();
-             }
-         }
-
-        displays[display]();
-
-        if (*displays[display] != *cpu_display) { // Only sleep if not on cpu since it takes 1s to check the cpu info anyway
-            sleep(1);
-        }
-    } while (true);
-
-    lcdClear(lcd);
-
-    return 0;
+    return lcd_display();
 }
