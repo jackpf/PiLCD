@@ -5,11 +5,13 @@
 #include <stdbool.h>
 #include <time.h>
 #include <math.h>
+#include <sys/statvfs.h>
 
 struct mem_info {
-    long total;
-    long free;
-    long used;
+    unsigned long total;
+    unsigned long free;
+    unsigned long used;
 };
 
 struct mem_info *mem_get_usage();
+struct mem_info *mem_get_disk_usage();

@@ -27,7 +27,7 @@ int fd[2];
 /**
  * LCD vars
  */
-int display = 0, lcd_timer = -1;
+int display = 1, lcd_timer = -1;
 
 /**
  * Display registers
@@ -74,17 +74,17 @@ void cpu_display()
 
 void mem_display()
 {
-    struct mem_info *mem_usage = mem_get_usage();
+    struct mem_info *mem_usage = mem_get_usage(), *disk_usage = mem_get_disk_usage();
 
-    if (mem_usage == NULL) {
+    if (mem_usage == NULL || disk_usage == NULL) {
         lcdClear(lcd);
         lcdPuts(lcd, strerror(errno));
         return;
     }
 
     char line1[AF_COLS], line2[AF_COLS];
-    sprintf(line1, "Used: %s", filesize_h(mem_usage->used));
-    sprintf(line2, "Free: %s", filesize_h(mem_usage->free));
+    sprintf(line1, "Mem: %s/%s", filesize_h(mem_usage->used), filesize_h(mem_usage->total));
+    sprintf(line2, "Dsk: %s / %s", filesize_h(disk_usage->used), filesize_h(disk_usage->total));
 
     lcdHome(lcd);
     lcdPrintf(lcd, "%*s", -AF_COLS, line1);

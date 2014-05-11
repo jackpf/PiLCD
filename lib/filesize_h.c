@@ -1,6 +1,6 @@
 #include "filesize_h.h"
 
-char *filesize_h(long sz)
+char *filesize_h(unsigned long sz)
 {
     char *unit_map[] = {"GB", "MB", "KB", "bytes"};
     int i, j;
@@ -11,8 +11,8 @@ char *filesize_h(long sz)
         }
     }
 
-    char *str = (char *) malloc(strlen(unit_map[j]) + 1 + (int) log10(sz / (1 << i)));
-    sprintf(str, "%ld%s", sz / (1 << i), unit_map[j]);
+    char *str = (char *) malloc(16 * sizeof(char));
+    snprintf(str, 16, "%ld%s", sz / (1 << i), unit_map[j]);
 
     return str;
 }

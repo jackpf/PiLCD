@@ -90,4 +90,6 @@ struct wifi_info *wifi_getinfo(struct ifaddrs *ifa)
             info->sig = db_level;
         }
     }
+
+    return info;
 }

@@ -3,4 +3,4 @@
 #include <string.h>
 #include <math.h>
 
-char *filesize_h(long);
+char *filesize_h(unsigned long);
