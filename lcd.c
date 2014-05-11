@@ -27,7 +27,7 @@ int fd[2];
 /**
  * LCD vars
  */
-int display = 1, lcd_timer = -1;
+int display = 0, lcd_timer = -1;
 
 /**
  * Display registers
