@@ -47,7 +47,6 @@ struct wifi_info *wifi_getinfo(struct ifaddrs *ifa)
     struct wifi_info *info = (struct wifi_info *) malloc(sizeof(struct wifi_info));
 
     // Some interface data
-    printf("%s\n", ifa->ifa_name);
     strncpy(info->ifa_name, ifa->ifa_name, sizeof(info->ifa_name));
 
     struct sockaddr_in *sa = (struct sockaddr_in *) ifa->ifa_addr;
