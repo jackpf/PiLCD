@@ -13,8 +13,8 @@
 #include <stdbool.h>
 
 struct wifi_info {
-    char *ifa_name;
-    char *addr;
+    char ifa_name[IFNAMSIZ];
+    char addr[INET6_ADDRSTRLEN];
     signed int sig;
 };
 

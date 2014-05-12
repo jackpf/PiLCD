@@ -47,12 +47,11 @@ struct wifi_info *wifi_getinfo(struct ifaddrs *ifa)
     struct wifi_info *info = (struct wifi_info *) malloc(sizeof(struct wifi_info));
 
     // Some interface data
-    info->ifa_name = malloc(sizeof(ifa->ifa_name));
-    strcpy(info->ifa_name, ifa->ifa_name);
+    printf("%s\n", ifa->ifa_name);
+    strncpy(info->ifa_name, ifa->ifa_name, sizeof(info->ifa_name));
 
     struct sockaddr_in *sa = (struct sockaddr_in *) ifa->ifa_addr;
-    info->addr = (char *) malloc(sizeof(inet_ntoa(sa->sin_addr)));
-    info->addr = inet_ntoa(sa->sin_addr);
+    strncpy(info->addr, inet_ntoa(sa->sin_addr), sizeof(info->addr));
 
     // Get signal range
     memset(&wrq, 0, sizeof(struct iwreq));
