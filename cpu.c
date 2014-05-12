@@ -11,8 +11,11 @@ double _get_cpu_temp()
     char buffer[128];
 
     if (fgets(buffer, sizeof buffer, fh) == NULL) {
+        fclose(fh);
         return 0.0;
     }
+
+    fclose(fh);
 
     return strtod(buffer, NULL) / 1000.0;
 }
