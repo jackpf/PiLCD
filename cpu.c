@@ -44,7 +44,6 @@ struct cpu_info *cpu_get_usage()
         char *idle_time_s = strtok(NULL, " ");
 
         if (sys_time_s == NULL || idle_time_s == NULL) {
-            fclose(fh);
             usleep(1000000); // Artificially sleep
             return NULL;
         }
@@ -55,7 +54,6 @@ struct cpu_info *cpu_get_usage()
         if (i == 0) {
             usleep(1000000);
         }
-        fclose(fh);
     }
 
     cpu_usage->sys_time = sys_time[1] - sys_time[0];
