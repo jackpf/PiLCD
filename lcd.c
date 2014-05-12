@@ -193,23 +193,25 @@ int key_listener()
     return 0;
 }
 
-static void key_handler(int sig, siginfo_t *siginfo, void *context)
+static void key_handler(int sig)
 {
-    int key;
-    read(fd[0], &key, sizeof(int));
+    if (sig == SIGUSR1) {
+        int key;
+        read(fd[0], &key, sizeof(int));
 
-    size_t displays_sz = sizeof(displays) / sizeof(display_func);
+        size_t displays_sz = sizeof(displays) / sizeof(display_func);
 
-    switch (key) {
-        case AF_LEFT:
-            display = display - 1 >= 0 ? display - 1 : displays_sz - 1;
-        break;
-        case AF_RIGHT:
-            display = display + 1 < displays_sz ? display + 1 : 0;
-        break;
-        case AF_SELECT:
-            lcd_led(LCD_LED_TOGGLE);
-        break;
+        switch (key) {
+            case AF_LEFT:
+                display = display - 1 >= 0 ? display - 1 : displays_sz - 1;
+            break;
+            case AF_RIGHT:
+                display = display + 1 < displays_sz ? display + 1 : 0;
+            break;
+            case AF_SELECT:
+                lcd_led(LCD_LED_TOGGLE);
+            break;
+        }
     }
 }
 
@@ -259,10 +261,7 @@ int main(int argc, char **argv)
     close(fd[1]);
 
     struct sigaction act;
-
-    act.sa_sigaction = &key_handler;
-    act.sa_flags = SA_SIGINFO;
-
+    act.sa_handler = &key_handler;
     sigaction(SIGUSR1, &act, NULL);
 
     // Register degree symbol
