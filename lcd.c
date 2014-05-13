@@ -50,14 +50,14 @@ void cpu_display()
 
     char line1[AF_COLS], line2[AF_COLS], load[4], temp[4];
     snprintf(load, sizeof(load), "%.0f", usage);
-    sprintf(line1,
+    snprintf(line1, AF_COLS,
         "%s%*s%%",
         "CPU load:",
         AF_COLS - strlen("CPU load:") - 1,
         load
     );
     snprintf(temp, sizeof(temp), "%.0f", cpu_usage->temp);
-    sprintf(line2,
+    snprintf(line2, AF_COLS,
         "%s%*s",
         "CPU temp:",
         AF_COLS - strlen("CPU temp:") - 1,
@@ -74,23 +74,24 @@ void cpu_display()
 
 void mem_display()
 {
-    struct mem_info *mem_usage = mem_get_usage(), *disk_usage = mem_get_disk_usage();
+    struct mem_info *mem_usage = mem_get_usage();//, *disk_usage = mem_get_disk_usage();
 
-    if (mem_usage == NULL || disk_usage == NULL) {
+    if (mem_usage == NULL) {// || disk_usage == NULL) {
         lcdClear(lcd);
         lcdPuts(lcd, strerror(errno));
         return;
     }
 
     char line1[AF_COLS], line2[AF_COLS];
-    sprintf(line1, "Mem: %s/%s", filesize_h(mem_usage->used), filesize_h(mem_usage->total));
-    sprintf(line2, "Dsk: %s / %s", filesize_h(disk_usage->used), filesize_h(disk_usage->total));
+    snprintf(line1, AF_COLS, "Mem: %s/%s", filesize_h(mem_usage->used), filesize_h(mem_usage->total));
+    snprintf(line2, AF_COLS, "Dsk: ...");//%s / %s", filesize_h(disk_usage->used), filesize_h(disk_usage->total));
 
     lcdHome(lcd);
     lcdPrintf(lcd, "%*s", -AF_COLS, line1);
     lcdPrintf(lcd, "%*s", -AF_COLS, line2);
 
     free(mem_usage);
+    //free(disk_usage);
 }
 
 void wifi_display()
@@ -115,9 +116,9 @@ void wifi_display()
         struct wifi_info *info = wifi_getinfo(ifa);
 
         char line1[AF_COLS], line2[AF_COLS];
-        sprintf(line1, "%s", inet_ntoa(((struct sockaddr_in *) ifa->ifa_addr)->sin_addr));
+        snprintf(line1, AF_COLS, "%s", inet_ntoa(((struct sockaddr_in *) ifa->ifa_addr)->sin_addr));
         if (info != NULL) {
-            sprintf(line2, "Signal: %ddBm", info->sig);
+            snprintf(line2, AF_COLS, "Signal: %ddBm", info->sig);
         }
 
         lcdHome(lcd);
