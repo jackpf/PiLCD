@@ -14,6 +14,8 @@
 #include "lib/filesize_h.h"
 #include "lib/adafruit.h"
 
+#define LCD_BACKLIGHT_TIMER 5
+
 /**
  * Lcd file descriptor
  */
@@ -27,7 +29,7 @@ int fd[2];
 /**
  * LCD vars
  */
-int display = 0, lcd_timer = -1;
+int display = 0, lcd_timer = -1, lcd_state;
 
 /**
  * Display registers
@@ -48,16 +50,16 @@ void cpu_display()
 
     float usage = cpu_usage->cpu_time / cpu_usage->sys_time * 100;
 
-    char line1[AF_COLS], line2[AF_COLS], load[4], temp[4];
+    char line1[AF_COLS + 1], line2[AF_COLS + 0 /* leave 1 char for degree symbol */], load[4], temp[4];
     snprintf(load, sizeof(load), "%.0f", usage);
-    sprintf(line1,
+    snprintf(line1, sizeof(line1),
         "%s%*s%%",
         "CPU load:",
         AF_COLS - strlen("CPU load:") - 1,
         load
     );
     snprintf(temp, sizeof(temp), "%.0f", cpu_usage->temp);
-    sprintf(line2,
+    snprintf(line2, sizeof(line2),
         "%s%*s",
         "CPU temp:",
         AF_COLS - strlen("CPU temp:") - 1,
@@ -82,9 +84,9 @@ void mem_display()
         return;
     }
 
-    char line1[AF_COLS], line2[AF_COLS];
-    snprintf(line1, AF_COLS, "Mem: %s/%s", filesize_h(mem_usage->used), filesize_h(mem_usage->total));
-    snprintf(line2, AF_COLS, "Dsk: ...");//%s / %s", filesize_h(disk_usage->used), filesize_h(disk_usage->total));
+    char line1[AF_COLS + 1], line2[AF_COLS + 1];
+    snprintf(line1, sizeof(line1), "Mem: %s/%s", filesize_h(mem_usage->used), filesize_h(mem_usage->total));
+    snprintf(line2, sizeof(line2), "Dsk: ...");//%s / %s", filesize_h(disk_usage->used), filesize_h(disk_usage->total));
 
     lcdHome(lcd);
     lcdPrintf(lcd, "%*s", -AF_COLS, line1);
@@ -115,10 +117,10 @@ void wifi_display()
     if (ifa != NULL) {
         struct wifi_info *info = wifi_getinfo(ifa);
 
-        char line1[AF_COLS], line2[AF_COLS];
-        snprintf(line1, AF_COLS, "%s", inet_ntoa(((struct sockaddr_in *) ifa->ifa_addr)->sin_addr));
+        char line1[AF_COLS + 1], line2[AF_COLS + 1];
+        snprintf(line1, sizeof(line1), "%s", inet_ntoa(((struct sockaddr_in *) ifa->ifa_addr)->sin_addr));
         if (info != NULL) {
-            snprintf(line2, AF_COLS, "Signal: %ddBm", info->sig);
+            snprintf(line2, sizeof(line2), "Signal: %ddBm", info->sig);
         }
 
         lcdHome(lcd);
@@ -159,19 +161,17 @@ int lcd_setup()
 
 void lcd_led(int state)
 {
-    static int last_state;
-
     if (state == LCD_LED_TOGGLE) {
-        state = !((bool) last_state);
+        state = !((bool) lcd_state);
     }
 
     digitalWrite(AF_LED, !state);
 
-    if (state == true && last_state == false) {
-        lcd_timer = 5;
+    if (state == true && lcd_state == false) {
+        lcd_timer = LCD_BACKLIGHT_TIMER;
     }
 
-    last_state = state;
+    lcd_state = state;
 }
 
 int key_listener()
@@ -226,6 +226,10 @@ int lcd_display()
     do {
         if (display_prev != display) {
             lcdClear(lcd);
+            // Keep backlight timer on for another 5 secs if it's already on
+            if (lcd_state) {
+                lcd_timer = LCD_BACKLIGHT_TIMER;
+            }
         }
         display_prev = display;
 
