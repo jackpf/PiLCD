@@ -50,14 +50,14 @@ void cpu_display()
 
     char line1[AF_COLS], line2[AF_COLS], load[4], temp[4];
     snprintf(load, sizeof(load), "%.0f", usage);
-    snprintf(line1, AF_COLS,
+    sprintf(line1,
         "%s%*s%%",
         "CPU load:",
         AF_COLS - strlen("CPU load:") - 1,
         load
     );
     snprintf(temp, sizeof(temp), "%.0f", cpu_usage->temp);
-    snprintf(line2, AF_COLS,
+    sprintf(line2,
         "%s%*s",
         "CPU temp:",
         AF_COLS - strlen("CPU temp:") - 1,
