@@ -218,7 +218,7 @@ static void key_handler(int sig)
 
 int lcd_display()
 {
-    int display_prev;
+    int display_prev = -1;
 
     // Start off with the display off
     lcd_led(LCD_LED_OFF);
@@ -233,12 +233,12 @@ int lcd_display()
         }
         display_prev = display;
 
-         if (lcd_timer >= 0) {
-             lcd_timer--;
-             if (lcd_timer == 0) {
-                 lcd_led(LCD_LED_OFF);
-             }
-         }
+        if (lcd_timer >= 0) {
+            lcd_timer--;
+            if (lcd_timer == 0) {
+                lcd_led(LCD_LED_OFF);
+            }
+        }
 
         displays[display]();
 
@@ -265,9 +265,11 @@ int main(int argc, char **argv)
 
     close(fd[1]);
 
-    struct sigaction act;
-    act.sa_handler = &key_handler;
-    sigaction(SIGUSR1, &act, NULL);
+    struct sigaction sa;
+    sa.sa_handler = &key_handler;
+    sigemptyset (&sa.sa_mask);
+    sa.sa_flags = 0;
+    sigaction(SIGUSR1, &sa, NULL);
 
     // Register degree symbol
     lcdCharDef(lcd, AF_DEGREE, AF_DEGREE_DEF);
