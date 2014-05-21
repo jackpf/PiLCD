@@ -176,7 +176,8 @@ void lcd_led(int state)
 
 int key_listener()
 {
-    bool pressed[AF_KEYS_R];
+    bool pressed[AF_KEYS_R] = {false};
+
     while (true) {
         for (int i = 0; i < sizeof(AF_KEYS) / sizeof(int); i++) {
             if (digitalRead(AF_KEYS[i]) == HIGH) {
