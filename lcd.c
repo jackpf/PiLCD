@@ -182,8 +182,7 @@ int key_listener()
         for (int i = 0; i < sizeof(AF_KEYS) / sizeof(int); i++) {
             if (digitalRead(AF_KEYS[i]) == HIGH) {
                 pressed[AF_KEYS[i]] = true;
-            }
-            if (pressed[AF_KEYS[i]] && digitalRead(AF_KEYS[i]) == LOW) {
+            } else if (pressed[AF_KEYS[i]] && digitalRead(AF_KEYS[i]) == LOW) {
                 pressed[AF_KEYS[i]] = false;
                 write(fd[1], &AF_KEYS[i], sizeof(int));
                 kill(getppid(), SIGUSR1);
