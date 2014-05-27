@@ -47,8 +47,10 @@ void cpu_display()
     struct cpu_info *cpu_usage = cpu_get_usage();
 
     if (cpu_usage == NULL) {
+        pthread_mutex_lock(&(mutex[MUTEX_BUS]));
         lcdClear(lcd);
         lcdPuts(lcd, strerror(errno));
+        pthread_mutex_unlock(&(mutex[MUTEX_BUS]));
         return;
     }
 
@@ -70,10 +72,12 @@ void cpu_display()
         temp
     );
 
+    pthread_mutex_lock(&(mutex[MUTEX_BUS]));
     lcdHome(lcd);
     lcdPrintf(lcd, "%*s", -(AF_COLS - 1), line1);
     lcdPrintf(lcd, "%*s", -(AF_COLS - 1), line2);
     lcdPutchar(lcd, AF_DEGREE);
+    pthread_mutex_unlock(&(mutex[MUTEX_BUS]));
 
     free(cpu_usage);
 }
@@ -83,8 +87,10 @@ void mem_display()
     struct mem_info *mem_usage = mem_get_usage();//, *disk_usage = mem_get_disk_usage();
 
     if (mem_usage == NULL) {// || disk_usage == NULL) {
+        pthread_mutex_lock(&(mutex[MUTEX_BUS]));
         lcdClear(lcd);
         lcdPuts(lcd, strerror(errno));
+        pthread_mutex_unlock(&(mutex[MUTEX_BUS]));
         return;
     }
 
@@ -92,9 +98,11 @@ void mem_display()
     snprintf(line1, sizeof(line1), "Mem: %s/%s", filesize_h(mem_usage->used), filesize_h(mem_usage->total));
     snprintf(line2, sizeof(line2), "Dsk: ...");//%s / %s", filesize_h(disk_usage->used), filesize_h(disk_usage->total));
 
+    pthread_mutex_lock(&(mutex[MUTEX_BUS]));
     lcdHome(lcd);
     lcdPrintf(lcd, "%*s", -AF_COLS, line1);
     lcdPrintf(lcd, "%*s", -AF_COLS, line2);
+    pthread_mutex_unlock(&(mutex[MUTEX_BUS]));
 
     free(mem_usage);
     //free(disk_usage);
@@ -127,19 +135,24 @@ void wifi_display()
             snprintf(line2, sizeof(line2), "Signal: %ddBm", info->sig);
         }
 
+        pthread_mutex_lock(&(mutex[MUTEX_BUS]));
         lcdHome(lcd);
         lcdPrintf(lcd, "%*s", -AF_COLS, line1);
         lcdPrintf(lcd, "%*s", -AF_COLS, line2);
+        pthread_mutex_unlock(&(mutex[MUTEX_BUS]));
 
         free(info);
     } else {
+        pthread_mutex_lock(&(mutex[MUTEX_BUS]));
         lcdClear(lcd);
         lcdPuts(lcd, "No interface found");
+        pthread_mutex_unlock(&(mutex[MUTEX_BUS]));
     }
 }
 
 int lcd_setup()
 {
+
     wiringPiSetupSys();
     mcp23017Setup(AF_BASE, I2C_ADDR);
 
@@ -209,11 +222,16 @@ void *key_listener(void *arg)
 
     while (true) {
         for (int i = 0; i < sizeof(AF_KEYS) / sizeof(int); i++) {
+            pthread_mutex_lock(&(mutex[MUTEX_BUS]));
             if (digitalRead(AF_KEYS[i]) == HIGH) {
+                pthread_mutex_unlock(&(mutex[MUTEX_BUS]));
                 pressed[AF_KEYS[i]] = true;
             } else if (pressed[AF_KEYS[i]] && digitalRead(AF_KEYS[i]) == LOW) {
+                pthread_mutex_unlock(&(mutex[MUTEX_BUS]));
                 pressed[AF_KEYS[i]] = false;
                 key_handler(AF_KEYS[i]);
+            } else {
+                pthread_mutex_unlock(&(mutex[MUTEX_BUS]));
             }
         }
         delay(50);
