@@ -26,6 +26,9 @@ int lcd;
  * Thread ids
  */
  pthread_t tid[1];
+ #define MUTEX_DISPLAY  0
+ #define MUTEX_BUS      1
+ pthread_mutex_t mutex[2];
 
 /**
  * LCD vars
@@ -162,6 +165,8 @@ int lcd_setup()
 
 void lcd_led(int state)
 {
+    pthread_mutex_lock(&(mutex[MUTEX_BUS]));
+
     if (state == LCD_LED_TOGGLE) {
         state = !((bool) lcd_state);
     }
@@ -173,18 +178,24 @@ void lcd_led(int state)
     }
 
     lcd_state = state;
+
+    pthread_mutex_unlock(&(mutex[MUTEX_BUS]));
 }
 
 void key_handler(int key)
 {
-    size_t displays_sz = sizeof(displays) / sizeof(display_func);
+    static size_t displays_sz = sizeof(displays) / sizeof(display_func);
 
     switch (key) {
         case AF_LEFT:
+            pthread_mutex_lock(&(mutex[MUTEX_DISPLAY]));
             display = display - 1 >= 0 ? display - 1 : displays_sz - 1;
+            pthread_mutex_unlock(&(mutex[MUTEX_DISPLAY]));
         break;
         case AF_RIGHT:
+            pthread_mutex_lock(&(mutex[MUTEX_DISPLAY]));
             display = display + 1 < displays_sz ? display + 1 : 0;
+            pthread_mutex_unlock(&(mutex[MUTEX_DISPLAY]));
         break;
         case AF_SELECT:
             lcd_led(LCD_LED_TOGGLE);
@@ -215,6 +226,9 @@ int lcd_display()
 
     // Start off with the display off
     lcd_led(LCD_LED_OFF);
+
+    // Register degree symbol
+    lcdCharDef(lcd, AF_DEGREE, AF_DEGREE_DEF);
 
     do {
         if (display_prev != display) {
@@ -247,10 +261,11 @@ int main(int argc, char **argv)
 {
     lcd = lcd_setup();
 
-    pthread_create(&(tid[0]), NULL, &key_listener, NULL);
+    for (int i = 0; i < sizeof(mutex) / sizeof(pthread_mutex_t); i++) {
+        pthread_mutex_init(&(mutex[i]), NULL);
+    }
 
-    // Register degree symbol
-    lcdCharDef(lcd, AF_DEGREE, AF_DEGREE_DEF);
+    pthread_create(&(tid[0]), NULL, &key_listener, NULL);
 
     return lcd_display();
 }
