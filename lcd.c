@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
+#include<pthread.h>
 
 #include <wiringPi.h>
 #include <mcp23017.h>
@@ -22,9 +23,9 @@
 int lcd;
 
 /**
- * Pipe file descriptor
+ * Thread ids
  */
-int fd[2];
+ pthread_t tid[1];
 
 /**
  * LCD vars
@@ -174,7 +175,24 @@ void lcd_led(int state)
     lcd_state = state;
 }
 
-int key_listener()
+void key_handler(int key)
+{
+    size_t displays_sz = sizeof(displays) / sizeof(display_func);
+
+    switch (key) {
+        case AF_LEFT:
+            display = display - 1 >= 0 ? display - 1 : displays_sz - 1;
+        break;
+        case AF_RIGHT:
+            display = display + 1 < displays_sz ? display + 1 : 0;
+        break;
+        case AF_SELECT:
+            lcd_led(LCD_LED_TOGGLE);
+        break;
+    }
+}
+
+void *key_listener(void *arg)
 {
     bool pressed[AF_KEYS_R] = {false};
 
@@ -184,35 +202,10 @@ int key_listener()
                 pressed[AF_KEYS[i]] = true;
             } else if (pressed[AF_KEYS[i]] && digitalRead(AF_KEYS[i]) == LOW) {
                 pressed[AF_KEYS[i]] = false;
-                write(fd[1], &AF_KEYS[i], sizeof(int));
-                kill(getppid(), SIGUSR1);
+                key_handler(AF_KEYS[i]);
             }
         }
         delay(50);
-    }
-
-    return 0;
-}
-
-static void key_handler(int sig)
-{
-    if (sig == SIGUSR1) {
-        int key;
-        read(fd[0], &key, sizeof(int));
-
-        size_t displays_sz = sizeof(displays) / sizeof(display_func);
-
-        switch (key) {
-            case AF_LEFT:
-                display = display - 1 >= 0 ? display - 1 : displays_sz - 1;
-            break;
-            case AF_RIGHT:
-                display = display + 1 < displays_sz ? display + 1 : 0;
-            break;
-            case AF_SELECT:
-                lcd_led(LCD_LED_TOGGLE);
-            break;
-        }
     }
 }
 
@@ -254,22 +247,7 @@ int main(int argc, char **argv)
 {
     lcd = lcd_setup();
 
-    pipe(fd);
-
-    pid_t pid = fork();
-
-    if (pid == 0) {
-        close(fd[0]);
-        return key_listener();
-    }
-
-    close(fd[1]);
-
-    struct sigaction sa;
-    sa.sa_handler = &key_handler;
-    sigemptyset (&sa.sa_mask);
-    sa.sa_flags = 0;
-    sigaction(SIGUSR1, &sa, NULL);
+    pthread_create(&(tid[0]), NULL, &key_listener, NULL);
 
     // Register degree symbol
     lcdCharDef(lcd, AF_DEGREE, AF_DEGREE_DEF);
