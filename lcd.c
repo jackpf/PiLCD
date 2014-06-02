@@ -16,6 +16,12 @@
 #include "lib/adafruit.h"
 
 #define LCD_BACKLIGHT_TIMER 5
+#define LCD_POLL_DELAY      50
+#define LCD_LED_ON          1
+#define LCD_LED_OFF         0
+#define LCD_LED_TOGGLE      -1
+#define MUTEX_DISPLAY       0
+#define MUTEX_BUS           1
 
 /**
  * Lcd file descriptor
@@ -23,11 +29,8 @@
 int lcd;
 
 /**
- * Thread ids
+ * Mutexes
  */
- pthread_t tid[1];
- #define MUTEX_DISPLAY  0
- #define MUTEX_BUS      1
  pthread_mutex_t mutex[2];
 
 /**
@@ -171,10 +174,6 @@ int lcd_setup()
     return lcdInit(AF_ROWS, AF_COLS, AF_BITMODE, AF_RS, AF_E, AF_DB4, AF_DB5, AF_DB6, AF_DB7, 0, 0, 0, 0);
 }
 
-#define LCD_LED_ON      1
-#define LCD_LED_OFF     0
-#define LCD_LED_TOGGLE  -1
-
 void lcd_led(int state)
 {
     pthread_mutex_lock(&(mutex[MUTEX_BUS]));
@@ -233,7 +232,7 @@ void *key_listener(void *arg)
                 pthread_mutex_unlock(&(mutex[MUTEX_BUS]));
             }
         }
-        delay(50);
+        delay(LCD_POLL_DELAY);
     }
 }
 
@@ -278,11 +277,13 @@ int main(int argc, char **argv)
 {
     lcd = lcd_setup();
 
+    pthread_t tid;
+
     for (int i = 0; i < sizeof(mutex) / sizeof(pthread_mutex_t); i++) {
         pthread_mutex_init(&(mutex[i]), NULL);
     }
 
-    pthread_create(&(tid[0]), NULL, &key_listener, NULL);
+    pthread_create(&tid, NULL, &key_listener, NULL);
 
     return lcd_display();
 }
