@@ -155,6 +155,7 @@ void wifi_display()
 
 int lcd_setup()
 {
+    pthread_mutex_lock(&(mutex[MUTEX_BUS]));
     wiringPiSetupSys();
     mcp23017Setup(AF_BASE, I2C_ADDR);
 
@@ -171,21 +172,28 @@ int lcd_setup()
     pinMode(AF_RW, OUTPUT);
     digitalWrite(AF_RW, LOW); // Not used with wiringPi - always in write mode
 
-    return lcdInit(AF_ROWS, AF_COLS, AF_BITMODE, AF_RS, AF_E, AF_DB4, AF_DB5, AF_DB6, AF_DB7, 0, 0, 0, 0);
+    int r = lcdInit(AF_ROWS, AF_COLS, AF_BITMODE, AF_RS, AF_E, AF_DB4, AF_DB5, AF_DB6, AF_DB7, 0, 0, 0, 0);
+    pthread_mutex_unlock(&(mutex[MUTEX_BUS]));
+
+    return r;
 }
 
 void lcd_led(int state)
 {
     pthread_mutex_lock(&(mutex[MUTEX_BUS]));
 
-    if (state == LCD_LED_TOGGLE) {
-        state = !((bool) lcd_state);
-    }
-
-    digitalWrite(AF_LED, !state);
-
-    if (state == true && lcd_state == false) {
+    if (state == LCD_LED_ON && lcd_state == LCD_LED_ON) {
         lcd_timer = LCD_BACKLIGHT_TIMER;
+    } else {
+        if (state == LCD_LED_TOGGLE) {
+            state = !((bool) lcd_state);
+        }
+
+        digitalWrite(AF_LED, !state);
+
+        if (state == LCD_LED_ON && lcd_state == LCD_LED_OFF) {
+            lcd_timer = LCD_BACKLIGHT_TIMER;
+        }
     }
 
     lcd_state = state;
@@ -209,7 +217,7 @@ void key_handler(int key)
             pthread_mutex_unlock(&(mutex[MUTEX_DISPLAY]));
         break;
         case AF_SELECT:
-            lcd_led(LCD_LED_TOGGLE);
+            //lcd_led(LCD_LED_TOGGLE);
         break;
     }
 }
@@ -244,11 +252,15 @@ int lcd_display()
     lcd_led(LCD_LED_OFF);
 
     // Register degree symbol
+    pthread_mutex_lock(&(mutex[MUTEX_BUS]));
     lcdCharDef(lcd, AF_DEGREE, AF_DEGREE_DEF);
+    pthread_mutex_unlock(&(mutex[MUTEX_BUS]));
 
     do {
         if (display_prev != display) {
+            pthread_mutex_lock(&(mutex[MUTEX_BUS]));
             lcdClear(lcd);
+            pthread_mutex_unlock(&(mutex[MUTEX_BUS]));
             // Keep backlight timer on for another 5 secs if it's already on
             if (lcd_state) {
                 lcd_timer = LCD_BACKLIGHT_TIMER;
