@@ -2,7 +2,7 @@
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
-#include<pthread.h>
+#include <pthread.h>
 
 #include <wiringPi.h>
 #include <mcp23017.h>
@@ -152,7 +152,6 @@ void wifi_display()
 
 int lcd_setup()
 {
-
     wiringPiSetupSys();
     mcp23017Setup(AF_BASE, I2C_ADDR);
 
