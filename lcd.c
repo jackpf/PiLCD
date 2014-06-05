@@ -217,7 +217,7 @@ void key_handler(int key)
             pthread_mutex_unlock(&(mutex[MUTEX_DISPLAY]));
         break;
         case AF_SELECT:
-            //lcd_led(LCD_LED_TOGGLE);
+            lcd_led(LCD_LED_TOGGLE);
         break;
     }
 }
