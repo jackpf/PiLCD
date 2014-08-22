@@ -8,6 +8,7 @@
 #include <mcp23017.h>
 #include <lcd.h>
 #include "lib/adafruit.h"
+#include "cpu.h"
 
 #define LCD_BACKLIGHT_TIMER 5
 #define LCD_POLL_DELAY      50
@@ -46,29 +47,33 @@ int lcd_setup()
 int lcd_display()
 {
     // Start off with the display off
-        digitalWrite(AF_LED, 1);
+    digitalWrite(AF_LED, 1);
 
-    // Register degree symbol
-    lcdCharDef(lcd, AF_DEGREE, AF_DEGREE_DEF);
-
-    int i = 0;
+    char *str = "Jack's Pi";
+    int pos = 0, len = strlen(str);
 
     do {
-        char line1[AF_COLS + 1], load[4];
-        snprintf(load, sizeof(load), "%d", i);
-        snprintf(line1, sizeof(line1),
-            "%s%*s%%",
-            "CPU load:",
-            AF_COLS - strlen("CPU load:") - 1,
-            load
-        );
+        for (int i = 0; i < len; i++) {
+            lcdPosition(lcd, pos, 0);
+            lcdPutchar(lcd, str[i]);
+            pos = (pos + 1) % len;
+            if (str[i] != ' ') {
+                usleep(500000);
+            }
+        }
 
-        lcdHome(lcd);
-        lcdPrintf(lcd, "%*s", -(AF_COLS - 1), line1);
+        usleep(1000000);
 
-        i = (i + 1) % 101;
+        for (int i = 0; i < 3; i++) {
+            lcdClear(lcd);
+            usleep(500000);
+            lcdPuts(lcd, str);
+            usleep(500000);
+        }
 
-        sleep(1);
+        usleep(1500000);
+        lcdClear(lcd);
+        usleep(500000);
     } while (1);
 
     return 0;
